@@ -1,54 +1,53 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 
-export default function App() {
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+import { CartProvider } from "./context/CartContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-  useEffect(() => {
-    fetch("http://localhost:5174/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts(data);
-      })
-      .catch((err) => {
-        setError(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+import Home from "./pages/Home";
+import ProductDetails from "./pages/ProductDetails";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Login from "./pages/Login";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import { AuthProvider } from "./context/AuthContext";
 
-  if (isLoading) return <p className="p-6 text-slate-600">Loading products…</p>;
-  if (error) return <p className="p-6 text-red-600">Error: {error.message}</p>;
+const queryClient = new QueryClient();
 
+function App() {
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">React Retail</h1>
+    <AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<Cart />} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((p) => (
-          <div
-            key={p.id}
-            className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="h-40 bg-slate-100 rounded mb-3 flex items-center justify-center">
-              <img
-                src={p.image}
-                alt={p.title}
-                className="object-cover h-full w-full rounded"
-              />
-            </div>
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
 
-            <h2 className="font-semibold text-slate-800">{p.title}</h2>
-            <p className="text-slate-500 text-sm">{p.category}</p>
-
-            <p className="mt-2 font-semibold text-slate-900">
-              ${p.price.toFixed(2)}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/order-confirmation"
+              element={<OrderConfirmation />}
+            />
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
+    </QueryClientProvider>
+    </AuthProvider>
   );
 }
+
+export default App;
